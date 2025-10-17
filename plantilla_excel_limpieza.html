@@ -1,0 +1,1756 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Control de Limpieza - Residencia</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+        
+        .header .date {
+            font-size: 18px;
+            opacity: 0.9;
+        }
+        
+        .tabs {
+            display: flex;
+            background: #2b579a;
+            padding: 0;
+            overflow-x: auto;
+        }
+        
+        .tab {
+            padding: 15px 25px;
+            color: white;
+            cursor: pointer;
+            border: none;
+            background: #2b579a;
+            font-size: 15px;
+            transition: all 0.3s;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        
+        .tab.active {
+            background: white;
+            color: #2b579a;
+            font-weight: bold;
+        }
+        
+        .tab:hover {
+            background: #3a639c;
+        }
+        
+        .tab.active:hover {
+            background: white;
+        }
+        
+        .tab-content {
+            display: none;
+            padding: 30px;
+            animation: fadeIn 0.3s;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Dashboard */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            border: 2px solid #e0e0e0;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+        }
+        
+        .stat-card h3 {
+            color: #333;
+            font-size: 18px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .stat-row:last-child {
+            border-bottom: none;
+        }
+        
+        .stat-value {
+            font-weight: 700;
+            font-size: 20px;
+            color: #667eea;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 40px;
+            background: #e0e0e0;
+            border-radius: 20px;
+            overflow: hidden;
+            margin-top: 15px;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 18px;
+            transition: width 0.5s ease;
+        }
+        
+        .progress-fill.low {
+            background: linear-gradient(90deg, #f093fb 0%, #f5576c 100%);
+        }
+        
+        .progress-fill.medium {
+            background: linear-gradient(90deg, #ffeaa7 0%, #fdcb6e 100%);
+            color: #333;
+        }
+        
+        .progress-fill.high {
+            background: linear-gradient(90deg, #55efc4 0%, #00b894 100%);
+        }
+        
+        .alert-box {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .alert-box h3 {
+            color: #856404;
+            margin-bottom: 10px;
+        }
+        
+        /* Control Table */
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-success {
+            background: #00b894;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #00a383;
+        }
+        
+        .btn-warning {
+            background: #fdcb6e;
+            color: #333;
+        }
+        
+        .btn-warning:hover {
+            background: #fbc531;
+        }
+        
+        .btn-danger {
+            background: #d63031;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #c0252a;
+        }
+        
+        .control-table-wrapper {
+            overflow-x: auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+        
+        .control-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 800px;
+        }
+        
+        .control-table th {
+            background: #4472c4;
+            color: white;
+            padding: 15px 12px;
+            text-align: left;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        .control-table td {
+            padding: 12px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .control-table tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .control-table input, .control-table select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border 0.3s;
+        }
+        
+        .control-table input:focus, .control-table select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            text-align: center;
+            display: inline-block;
+            width: 100%;
+        }
+        
+        .status-pendiente {
+            background: #ffc7ce;
+            color: #9c0006;
+        }
+        
+        .status-proceso {
+            background: #ffeb9c;
+            color: #9c6500;
+        }
+        
+        .status-completado {
+            background: #c6efce;
+            color: #006100;
+        }
+        
+        .status-atencion {
+            background: #ffc000;
+            color: #5c3c00;
+        }
+        
+        /* Reportes */
+        .report-filters {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: end;
+        }
+        
+        .filter-group {
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        .filter-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .filter-group select, .filter-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        
+        .chart-container {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            margin-bottom: 25px;
+        }
+        
+        .chart-container h3 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+        
+        .bar-chart {
+            display: flex;
+            align-items: flex-end;
+            gap: 15px;
+            height: 300px;
+            padding: 20px;
+        }
+        
+        .bar {
+            flex: 1;
+            background: linear-gradient(to top, #667eea, #764ba2);
+            border-radius: 8px 8px 0 0;
+            position: relative;
+            transition: all 0.3s;
+            min-height: 20px;
+        }
+        
+        .bar:hover {
+            opacity: 0.8;
+            transform: translateY(-5px);
+        }
+        
+        .bar-label {
+            position: absolute;
+            bottom: -30px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 12px;
+            font-weight: 600;
+            color: #666;
+        }
+        
+        .bar-value {
+            position: absolute;
+            top: -25px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-weight: 700;
+            color: #667eea;
+        }
+        
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .summary-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        .summary-card h4 {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-bottom: 10px;
+        }
+        
+        .summary-card .value {
+            font-size: 36px;
+            font-weight: 700;
+        }
+        
+        /* Instrucciones */
+        .instructions {
+            background: #e7f3ff;
+            border-left: 4px solid #4472c4;
+            padding: 20px;
+            margin-bottom: 25px;
+            border-radius: 8px;
+        }
+        
+        .instructions h3 {
+            color: #2b579a;
+            margin-bottom: 15px;
+        }
+        
+        .instructions ul {
+            margin-left: 20px;
+        }
+        
+        .instructions li {
+            margin-bottom: 8px;
+            line-height: 1.6;
+        }
+        
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            animation: fadeIn 0.3s;
+        }
+        
+        .modal-content {
+            background: white;
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            animation: slideUp 0.3s;
+        }
+        
+        @keyframes slideUp {
+            from { transform: translateY(50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .modal-header h2 {
+            color: #333;
+        }
+        
+        .close {
+            font-size: 28px;
+            font-weight: bold;
+            color: #999;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+        
+        .close:hover {
+            color: #333;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 24px;
+            }
+            
+            .tabs {
+                flex-wrap: wrap;
+            }
+            
+            .tab {
+                flex: 1 1 auto;
+                min-width: 120px;
+            }
+            
+            .tab-content {
+                padding: 15px;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .control-header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+        
+        .export-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏨 Sistema de Control de Limpieza</h1>
+            <div class="date" id="currentDate"></div>
+        </div>
+        
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('dashboard')">📊 Dashboard</button>
+            <button class="tab" onclick="showTab('control')">📋 Control Diario</button>
+            <button class="tab" onclick="showTab('reportes')">📈 Reportes</button>
+            <button class="tab" onclick="showTab('historial')">📚 Historial</button>
+            <button class="tab" onclick="showTab('config')">⚙️ Configuración</button>
+        </div>
+        
+        <!-- DASHBOARD -->
+        <div id="dashboard" class="tab-content active">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3>🏠 HABITACIONES</h3>
+                    <div class="stat-row">
+                        <span>Total:</span>
+                        <span class="stat-value" id="totalHab">0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span>✅ Completadas:</span>
+                        <span class="stat-value" id="completadasHab">0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span>⏳ En Proceso:</span>
+                        <span class="stat-value" id="procesoHab">0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span>❌ Pendientes:</span>
+                        <span class="stat-value" id="pendientesHab">0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span>🔧 Requieren Atención:</span>
+                        <span class="stat-value" id="atencionHab">0</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressHab" style="width: 0%">0%</div>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <h3>🏛️ ÁREAS COMUNES</h3>
+                    <div class="stat-row">
+                        <span>Total:</span>
+                        <span class="stat-value" id="totalAreas">0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span>✅ Completadas:</span>
+                        <span class="stat-value" id="completadasAreas">0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span>⏳ En Proceso:</span>
+                        <span class="stat-value" id="procesoAreas">0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span>❌ Pendientes:</span>
+                        <span class="stat-value" id="pendientesAreas">0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span>🔧 Requieren Atención:</span>
+                        <span class="stat-value" id="atencionAreas">0</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressAreas" style="width: 0%">0%</div>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <h3>🎯 AVANCE GENERAL</h3>
+                    <div class="stat-row">
+                        <span>Total Completadas:</span>
+                        <span class="stat-value" id="totalCompletadas">0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span>Total de Áreas:</span>
+                        <span class="stat-value" id="totalGeneral">0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span style="font-size: 18px; font-weight: 700;">% CUMPLIMIENTO:</span>
+                        <span class="stat-value" style="font-size: 28px;" id="porcentajeTotal">0%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressTotal" style="width: 0%">0%</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="alert-box">
+                <h3>⚠️ ALERTAS Y ATENCIÓN REQUERIDA</h3>
+                <p><strong>Áreas que requieren atención:</strong> <span id="alertList">Ninguna</span></p>
+            </div>
+        </div>
+        
+        <!-- CONTROL DIARIO -->
+        <div id="control" class="tab-content">
+            <div class="instructions">
+                <h3>📱 Instrucciones Rápidas</h3>
+                <ul>
+                    <li><strong>Al iniciar:</strong> Marca hora de inicio y cambia status a "EN PROCESO"</li>
+                    <li><strong>Al terminar:</strong> Marca hora de fin y cambia status a "COMPLETADO"</li>
+                    <li><strong>Si hay problema:</strong> Cambia status a "REQUIERE ATENCIÓN" y describe el problema</li>
+                </ul>
+            </div>
+            
+            <div class="control-header">
+                <h2 style="margin: 0;">📋 Registro del Día</h2>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button class="btn btn-success" onclick="guardarProgreso()">💾 Guardar Progreso</button>
+                    <button class="btn btn-warning" onclick="exportarDia()">📥 Exportar Día</button>
+                    <button class="btn btn-primary" onclick="mostrarAgregarArea()">➕ Agregar Área</button>
+                </div>
+            </div>
+            
+            <div class="control-table-wrapper">
+                <table class="control-table">
+                    <thead>
+                        <tr>
+                            <th>Área/Habitación</th>
+                            <th>Responsable</th>
+                            <th>Hora Inicio</th>
+                            <th>Hora Fin</th>
+                            <th>Status</th>
+                            <th>Observaciones</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody id="controlBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- REPORTES -->
+        <div id="reportes" class="tab-content">
+            <h2>📈 Reportes y Estadísticas</h2>
+            
+            <div class="report-filters">
+                <div class="filter-group">
+                    <label>Tipo de Reporte:</label>
+                    <select id="tipoReporte" onchange="generarReporte()">
+                        <option value="semanal">Semanal</option>
+                        <option value="mensual">Mensual</option>
+                        <option value="personalizado">Personalizado</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Desde:</label>
+                    <input type="date" id="fechaDesde" onchange="generarReporte()">
+                </div>
+                <div class="filter-group">
+                    <label>Hasta:</label>
+                    <input type="date" id="fechaHasta" onchange="generarReporte()">
+                </div>
+                <div class="filter-group">
+                    <button class="btn btn-primary" onclick="generarReporte()">🔄 Actualizar</button>
+                </div>
+            </div>
+            
+            <div class="summary-cards" id="summaryCards">
+            </div>
+            
+            <div class="chart-container">
+                <h3>📊 Cumplimiento Diario</h3>
+                <div class="bar-chart" id="cumplimientoChart">
+                </div>
+            </div>
+            
+            <div class="chart-container">
+                <h3>👥 Rendimiento por Responsable</h3>
+                <div class="bar-chart" id="rendimientoChart">
+                </div>
+            </div>
+            
+            <div class="export-buttons">
+                <button class="btn btn-success" onclick="exportarReporte('pdf')">📄 Exportar PDF</button>
+                <button class="btn btn-primary" onclick="exportarReporte('excel')">📊 Exportar Excel</button>
+            </div>
+        </div>
+        
+        <!-- HISTORIAL -->
+        <div id="historial" class="tab-content">
+            <h2>📚 Historial de Registros</h2>
+            
+            <div class="report-filters">
+                <div class="filter-group">
+                    <label>Buscar por Área:</label>
+                    <input type="text" id="buscarArea" placeholder="Ej: Habitación 101" onkeyup="filtrarHistorial()">
+                </div>
+                <div class="filter-group">
+                    <label>Buscar por Responsable:</label>
+                    <select id="buscarResponsable" onchange="filtrarHistorial()">
+                        <option value="">Todos</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Fecha:</label>
+                    <input type="date" id="buscarFecha" onchange="filtrarHistorial()">
+                </div>
+                <div class="filter-group">
+                    <button class="btn btn-warning" onclick="limpiarFiltros()">🔄 Limpiar Filtros</button>
+                </div>
+            </div>
+            
+            <div class="control-table-wrapper">
+                <table class="control-table">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Área</th>
+                            <th>Responsable</th>
+                            <th>Inicio</th>
+                            <th>Fin</th>
+                            <th>Status</th>
+                            <th>Observaciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historialBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- CONFIGURACIÓN -->
+        <div id="config" class="tab-content">
+            <h2>⚙️ Configuración del Sistema</h2>
+            
+            <div class="stat-card" style="max-width: 600px; margin-bottom: 20px;">
+                <h3>🏠 Áreas y Habitaciones</h3>
+                <div style="margin-top: 15px;">
+                    <input type="text" id="nuevaArea" placeholder="Nombre del área/habitación" style="width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                    <select id="tipoArea" style="width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                        <option value="habitacion">Habitación</option>
+                        <option value="area">Área Común</option>
+                    </select>
+                    <button class="btn btn-primary" onclick="agregarAreaConfig()">➕ Agregar</button>
+                </div>
+                <div id="listaAreas" style="margin-top: 20px;">
+                </div>
+            </div>
+            
+            <div class="stat-card" style="max-width: 600px; margin-bottom: 20px;">
+                <h3>👥 Equipo de Trabajo</h3>
+                <div style="margin-top: 15px;">
+                    <input type="text" id="nuevoResponsable" placeholder="Nombre del responsable" style="width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                    <button class="btn btn-primary" onclick="agregarResponsableConfig()">➕ Agregar</button>
+                </div>
+                <div id="listaResponsables" style="margin-top: 20px;">
+                </div>
+            </div>
+            
+            <div class="stat-card" style="max-width: 600px;">
+                <h3>💾 Gestión de Datos</h3>
+                <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;">
+                    <button class="btn btn-success" onclick="exportarTodosDatos()">📥 Exportar Todos los Datos</button>
+                    <button class="btn btn-warning" onclick="importarDatos()">📤 Importar Datos</button>
+                    <button class="btn btn-danger" onclick="confirmarBorrarDatos()">🗑️ Borrar Todos los Datos</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal para agregar área -->
+    <div id="modalAgregarArea" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>➕ Agregar Nueva Área</h2>
+                <span class="close" onclick="cerrarModal()">&times;</span>
+            </div>
+            <div>
+                <label style="display: block; margin-bottom: 8px; font-weight: 600;">Nombre del Área:</label>
+                <input type="text" id="modalNombreArea" placeholder="Ej: Habitación 401" style="width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 6px;">
+                
+                <label style="display: block; margin-bottom: 8px; font-weight: 600;">Responsable:</label>
+                <select id="modalResponsable" style="width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 6px;">
+                </select>
+                
+                <button class="btn btn-primary" onclick="agregarAreaAlControl()" style="width: 100%;">✅ Agregar</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // ============================================
+        // SISTEMA DE ALMACENAMIENTO Y DATOS
+        // ============================================
+        
+        let registros = [];
+        let areas = [];
+        let responsables = [];
+        let configuracion = {
+            version: '1.0'
+        };
+        
+        // Inicializar datos por defecto
+        function inicializarDatos() {
+            // Cargar desde memoria o usar datos por defecto
+            const datosGuardados = cargarDatos();
+            
+            if (datosGuardados) {
+                registros = datosGuardados.registros || [];
+                areas = datosGuardados.areas || [];
+                responsables = datosGuardados.responsables || [];
+            } else {
+                // Datos por defecto
+                areas = [
+                    { id: 1, nombre: 'Habitación 101', tipo: 'habitacion' },
+                    { id: 2, nombre: 'Habitación 102', tipo: 'habitacion' },
+                    { id: 3, nombre: 'Habitación 103', tipo: 'habitacion' },
+                    { id: 4, nombre: 'Habitación 104', tipo: 'habitacion' },
+                    { id: 5, nombre: 'Habitación 105', tipo: 'habitacion' },
+                    { id: 6, nombre: 'Habitación 201', tipo: 'habitacion' },
+                    { id: 7, nombre: 'Habitación 202', tipo: 'habitacion' },
+                    { id: 8, nombre: 'Habitación 203', tipo: 'habitacion' },
+                    { id: 9, nombre: 'Habitación 204', tipo: 'habitacion' },
+                    { id: 10, nombre: 'Habitación 205', tipo: 'habitacion' },
+                    { id: 11, nombre: 'Habitación 301', tipo: 'habitacion' },
+                    { id: 12, nombre: 'Habitación 302', tipo: 'habitacion' },
+                    { id: 13, nombre: 'Habitación 303', tipo: 'habitacion' },
+                    { id: 14, nombre: 'Habitación 304', tipo: 'habitacion' },
+                    { id: 15, nombre: 'Habitación 305', tipo: 'habitacion' },
+                    { id: 16, nombre: 'Biblioteca', tipo: 'area' },
+                    { id: 17, nombre: 'Recepción', tipo: 'area' },
+                    { id: 18, nombre: 'Spa', tipo: 'area' },
+                    { id: 19, nombre: 'Baños Comunes 1er Piso', tipo: 'area' },
+                    { id: 20, nombre: 'Baños Comunes 2do Piso', tipo: 'area' },
+                    { id: 21, nombre: 'Sports Bar', tipo: 'area' }
+                ];
+                
+                responsables = [
+                    { id: 1, nombre: 'María González' },
+                    { id: 2, nombre: 'Juan Pérez' },
+                    { id: 3, nombre: 'Ana Martínez' },
+                    { id: 4, nombre: 'Pedro López' },
+                    { id: 5, nombre: 'Luis Ramírez' }
+                ];
+                
+                // Crear registros del día actual si no existen
+                crearRegistrosDia();
+            }
+            
+            guardarDatos();
+        }
+        
+        function crearRegistrosDia() {
+            const hoy = obtenerFechaHoy();
+            const registrosHoy = registros.filter(r => r.fecha === hoy);
+            
+            if (registrosHoy.length === 0) {
+                areas.forEach((area, index) => {
+                    registros.push({
+                        id: Date.now() + index,
+                        fecha: hoy,
+                        area: area.nombre,
+                        tipoArea: area.tipo,
+                        responsable: responsables[index % responsables.length].nombre,
+                        horaInicio: '',
+                        horaFin: '',
+                        status: 'PENDIENTE',
+                        observaciones: ''
+                    });
+                });
+            }
+        }
+        
+        function guardarDatos() {
+            const datos = {
+                registros: registros,
+                areas: areas,
+                responsables: responsables,
+                configuracion: configuracion,
+                ultimaActualizacion: new Date().toISOString()
+            };
+            
+            const datosJSON = JSON.stringify(datos);
+            
+            // Guardar en memoria del navegador
+            try {
+                // Usar una variable en memoria para simular persistencia
+                window.sistemaLimpiezaDatos = datosJSON;
+                console.log('Datos guardados correctamente');
+            } catch (e) {
+                console.error('Error al guardar datos:', e);
+            }
+        }
+        
+        function cargarDatos() {
+            try {
+                const datosJSON = window.sistemaLimpiezaDatos;
+                if (datosJSON) {
+                    return JSON.parse(datosJSON);
+                }
+            } catch (e) {
+                console.error('Error al cargar datos:', e);
+            }
+            return null;
+        }
+        
+        // ============================================
+        // FUNCIONES DE UTILIDAD
+        // ============================================
+        
+        function obtenerFechaHoy() {
+            const hoy = new Date();
+            return hoy.toISOString().split('T')[0];
+        }
+        
+        function formatearFecha(fecha) {
+            const opciones = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            const date = new Date(fecha + 'T00:00:00');
+            return date.toLocaleDateString('es-MX', opciones).replace(/^\w/, c => c.toUpperCase());
+        }
+        
+        function obtenerDiaSemana(fecha) {
+            const date = new Date(fecha + 'T00:00:00');
+            const dias = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+            return dias[date.getDay()];
+        }
+        
+        // ============================================
+        // NAVEGACIÓN DE PESTAÑAS
+        // ============================================
+        
+        function showTab(tabName) {
+            const tabs = document.querySelectorAll('.tab');
+            const contents = document.querySelectorAll('.tab-content');
+            
+            tabs.forEach(tab => tab.classList.remove('active'));
+            contents.forEach(content => content.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+            
+            // Actualizar contenido según la pestaña
+            if (tabName === 'dashboard') {
+                actualizarDashboard();
+            } else if (tabName === 'control') {
+                cargarControlDiario();
+            } else if (tabName === 'reportes') {
+                inicializarReportes();
+                generarReporte();
+            } else if (tabName === 'historial') {
+                cargarHistorial();
+            } else if (tabName === 'config') {
+                cargarConfiguracion();
+            }
+        }
+        
+        // ============================================
+        // DASHBOARD
+        // ============================================
+        
+        function actualizarDashboard() {
+            const hoy = obtenerFechaHoy();
+            const registrosHoy = registros.filter(r => r.fecha === hoy);
+            
+            const habitaciones = registrosHoy.filter(r => r.tipoArea === 'habitacion');
+            const areasComunes = registrosHoy.filter(r => r.tipoArea === 'area');
+            
+            // Estadísticas de habitaciones
+            const totalHab = habitaciones.length;
+            const completadasHab = habitaciones.filter(r => r.status === 'COMPLETADO').length;
+            const procesoHab = habitaciones.filter(r => r.status === 'EN PROCESO').length;
+            const pendientesHab = habitaciones.filter(r => r.status === 'PENDIENTE').length;
+            const atencionHab = habitaciones.filter(r => r.status === 'REQUIERE ATENCIÓN').length;
+            const porcentajeHab = totalHab > 0 ? Math.round((completadasHab / totalHab) * 100) : 0;
+            
+            // Estadísticas de áreas comunes
+            const totalAreas = areasComunes.length;
+            const completadasAreas = areasComunes.filter(r => r.status === 'COMPLETADO').length;
+            const procesoAreas = areasComunes.filter(r => r.status === 'EN PROCESO').length;
+            const pendientesAreas = areasComunes.filter(r => r.status === 'PENDIENTE').length;
+            const atencionAreas = areasComunes.filter(r => r.status === 'REQUIERE ATENCIÓN').length;
+            const porcentajeAreas = totalAreas > 0 ? Math.round((completadasAreas / totalAreas) * 100) : 0;
+            
+            // Totales
+            const totalCompletadas = completadasHab + completadasAreas;
+            const totalGeneral = totalHab + totalAreas;
+            const porcentajeTotal = totalGeneral > 0 ? Math.round((totalCompletadas / totalGeneral) * 100) : 0;
+            
+            // Actualizar DOM
+            document.getElementById('totalHab').textContent = totalHab;
+            document.getElementById('completadasHab').textContent = completadasHab;
+            document.getElementById('procesoHab').textContent = procesoHab;
+            document.getElementById('pendientesHab').textContent = pendientesHab;
+            document.getElementById('atencionHab').textContent = atencionHab;
+            actualizarProgreso('progressHab', porcentajeHab);
+            
+            document.getElementById('totalAreas').textContent = totalAreas;
+            document.getElementById('completadasAreas').textContent = completadasAreas;
+            document.getElementById('procesoAreas').textContent = procesoAreas;
+            document.getElementById('pendientesAreas').textContent = pendientesAreas;
+            document.getElementById('atencionAreas').textContent = atencionAreas;
+            actualizarProgreso('progressAreas', porcentajeAreas);
+            
+            document.getElementById('totalCompletadas').textContent = totalCompletadas;
+            document.getElementById('totalGeneral').textContent = totalGeneral;
+            document.getElementById('porcentajeTotal').textContent = porcentajeTotal + '%';
+            actualizarProgreso('progressTotal', porcentajeTotal);
+            
+            // Alertas
+            const areasAtencion = registrosHoy.filter(r => r.status === 'REQUIERE ATENCIÓN');
+            const listaAlertas = areasAtencion.length > 0 
+                ? areasAtencion.map(r => r.area).join(', ')
+                : 'Ninguna';
+            document.getElementById('alertList').textContent = listaAlertas;
+        }
+        
+        function actualizarProgreso(elementId, porcentaje) {
+            const elemento = document.getElementById(elementId);
+            elemento.style.width = porcentaje + '%';
+            elemento.textContent = porcentaje + '%';
+            
+            // Cambiar color según porcentaje
+            elemento.className = 'progress-fill';
+            if (porcentaje >= 90) elemento.classList.add('high');
+            else if (porcentaje >= 70) elemento.classList.add('medium');
+            else elemento.classList.add('low');
+        }
+        
+        // ============================================
+        // CONTROL DIARIO
+        // ============================================
+        
+        function cargarControlDiario() {
+            const hoy = obtenerFechaHoy();
+            const registrosHoy = registros.filter(r => r.fecha === hoy);
+            
+            const tbody = document.getElementById('controlBody');
+            tbody.innerHTML = '';
+            
+            registrosHoy.forEach(registro => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><strong>${registro.area}</strong></td>
+                    <td>
+                        <select onchange="actualizarRegistro(${registro.id}, 'responsable', this.value)">
+                            ${responsables.map(r => 
+                                `<option value="${r.nombre}" ${r.nombre === registro.responsable ? 'selected' : ''}>${r.nombre}</option>`
+                            ).join('')}
+                        </select>
+                    </td>
+                    <td>
+                        <input type="time" value="${registro.horaInicio}" 
+                               onchange="actualizarRegistro(${registro.id}, 'horaInicio', this.value)">
+                    </td>
+                    <td>
+                        <input type="time" value="${registro.horaFin}" 
+                               onchange="actualizarRegistro(${registro.id}, 'horaFin', this.value)">
+                    </td>
+                    <td>
+                        <select class="status-badge status-${registro.status.toLowerCase().replace(' ', '-')}" 
+                                onchange="actualizarRegistro(${registro.id}, 'status', this.value); cambiarEstiloStatus(this)">
+                            <option value="PENDIENTE" ${registro.status === 'PENDIENTE' ? 'selected' : ''}>❌ PENDIENTE</option>
+                            <option value="EN PROCESO" ${registro.status === 'EN PROCESO' ? 'selected' : ''}>⏳ EN PROCESO</option>
+                            <option value="COMPLETADO" ${registro.status === 'COMPLETADO' ? 'selected' : ''}>✅ COMPLETADO</option>
+                            <option value="REQUIERE ATENCIÓN" ${registro.status === 'REQUIERE ATENCIÓN' ? 'selected' : ''}>🔧 REQUIERE ATENCIÓN</option>
+                        </select>
+                    </td>
+                    <td>
+                        <input type="text" value="${registro.observaciones}" 
+                               onchange="actualizarRegistro(${registro.id}, 'observaciones', this.value)"
+                               placeholder="Solo si es necesario...">
+                    </td>
+                    <td>
+                        <button class="btn btn-danger" onclick="eliminarRegistro(${registro.id})" style="padding: 6px 12px; font-size: 12px;">🗑️</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+        
+        function cambiarEstiloStatus(select) {
+            const status = select.value.toLowerCase().replace(' ', '-');
+            select.className = `status-badge status-${status}`;
+        }
+        
+        function actualizarRegistro(id, campo, valor) {
+            const registro = registros.find(r => r.id === id);
+            if (registro) {
+                registro[campo] = valor;
+                
+                // Si se marca como completado y no hay hora fin, poner la hora actual
+                if (campo === 'status' && valor === 'COMPLETADO' && !registro.horaFin) {
+                    const ahora = new Date();
+                    registro.horaFin = ahora.toTimeString().slice(0, 5);
+                }
+                
+                // Si se pone hora de inicio y está pendiente, cambiar a en proceso
+                if (campo === 'horaInicio' && valor && registro.status === 'PENDIENTE') {
+                    registro.status = 'EN PROCESO';
+                }
+                
+                guardarDatos();
+                actualizarDashboard();
+                
+                // Recargar la fila para reflejar cambios automáticos
+                if (campo === 'horaInicio' || campo === 'status') {
+                    cargarControlDiario();
+                }
+            }
+        }
+        
+        function eliminarRegistro(id) {
+            if (confirm('¿Estás seguro de eliminar este registro?')) {
+                registros = registros.filter(r => r.id !== id);
+                guardarDatos();
+                cargarControlDiario();
+                actualizarDashboard();
+            }
+        }
+        
+        function guardarProgreso() {
+            guardarDatos();
+            alert('✅ Progreso guardado correctamente');
+            actualizarDashboard();
+        }
+        
+        // ============================================
+        // REPORTES
+        // ============================================
+        
+        function inicializarReportes() {
+            const hoy = new Date();
+            const hace7dias = new Date(hoy);
+            hace7dias.setDate(hace7dias.getDate() - 7);
+            
+            document.getElementById('fechaDesde').value = hace7dias.toISOString().split('T')[0];
+            document.getElementById('fechaHasta').value = hoy.toISOString().split('T')[0];
+        }
+        
+        function generarReporte() {
+            const tipo = document.getElementById('tipoReporte').value;
+            let fechaDesde, fechaHasta;
+            
+            const hoy = new Date();
+            
+            if (tipo === 'semanal') {
+                fechaHasta = hoy;
+                fechaDesde = new Date(hoy);
+                fechaDesde.setDate(fechaDesde.getDate() - 7);
+            } else if (tipo === 'mensual') {
+                fechaHasta = hoy;
+                fechaDesde = new Date(hoy);
+                fechaDesde.setDate(fechaDesde.getDate() - 30);
+            } else {
+                fechaDesde = new Date(document.getElementById('fechaDesde').value);
+                fechaHasta = new Date(document.getElementById('fechaHasta').value);
+            }
+            
+            const fechaDesdeStr = fechaDesde.toISOString().split('T')[0];
+            const fechaHastaStr = fechaHasta.toISOString().split('T')[0];
+            
+            document.getElementById('fechaDesde').value = fechaDesdeStr;
+            document.getElementById('fechaHasta').value = fechaHastaStr;
+            
+            const registrosPeriodo = registros.filter(r => 
+                r.fecha >= fechaDesdeStr && r.fecha <= fechaHastaStr
+            );
+            
+            generarTarjetasResumen(registrosPeriodo);
+            generarGraficoCumplimiento(registrosPeriodo);
+            generarGraficoRendimiento(registrosPeriodo);
+        }
+        
+        function generarTarjetasResumen(registrosPeriodo) {
+            const total = registrosPeriodo.length;
+            const completados = registrosPeriodo.filter(r => r.status === 'COMPLETADO').length;
+            const conProblemas = registrosPeriodo.filter(r => r.status === 'REQUIERE ATENCIÓN').length;
+            const porcentaje = total > 0 ? Math.round((completados / total) * 100) : 0;
+            
+            // Calcular tiempo promedio
+            let tiempoTotal = 0;
+            let contadorTiempos = 0;
+            registrosPeriodo.forEach(r => {
+                if (r.horaInicio && r.horaFin) {
+                    const inicio = new Date('2000-01-01 ' + r.horaInicio);
+                    const fin = new Date('2000-01-01 ' + r.horaFin);
+                    const diff = (fin - inicio) / 60000; // minutos
+                    if (diff > 0) {
+                        tiempoTotal += diff;
+                        contadorTiempos++;
+                    }
+                }
+            });
+            const tiempoPromedio = contadorTiempos > 0 ? Math.round(tiempoTotal / contadorTiempos) : 0;
+            
+            const summaryCards = document.getElementById('summaryCards');
+            summaryCards.innerHTML = `
+                <div class="summary-card">
+                    <h4>Total de Limpiezas</h4>
+                    <div class="value">${total}</div>
+                </div>
+                <div class="summary-card">
+                    <h4>Completadas</h4>
+                    <div class="value">${completados}</div>
+                </div>
+                <div class="summary-card">
+                    <h4>% Cumplimiento</h4>
+                    <div class="value">${porcentaje}%</div>
+                </div>
+                <div class="summary-card">
+                    <h4>Con Problemas</h4>
+                    <div class="value">${conProblemas}</div>
+                </div>
+                <div class="summary-card">
+                    <h4>Tiempo Promedio</h4>
+                    <div class="value">${tiempoPromedio} min</div>
+                </div>
+            `;
+        }
+        
+        function generarGraficoCumplimiento(registrosPeriodo) {
+            // Agrupar por fecha
+            const porFecha = {};
+            registrosPeriodo.forEach(r => {
+                if (!porFecha[r.fecha]) {
+                    porFecha[r.fecha] = { total: 0, completados: 0 };
+                }
+                porFecha[r.fecha].total++;
+                if (r.status === 'COMPLETADO') {
+                    porFecha[r.fecha].completados++;
+                }
+            });
+            
+            const chart = document.getElementById('cumplimientoChart');
+            chart.innerHTML = '';
+            
+            const fechas = Object.keys(porFecha).sort();
+            const maxAltura = 300;
+            
+            if (fechas.length === 0) {
+                chart.innerHTML = '<p style="text-align: center; color: #999;">No hay datos para mostrar</p>';
+                return;
+            }
+            
+            fechas.forEach(fecha => {
+                const datos = porFecha[fecha];
+                const porcentaje = datos.total > 0 ? (datos.completados / datos.total) * 100 : 0;
+                const altura = (porcentaje / 100) * maxAltura;
+                
+                const bar = document.createElement('div');
+                bar.className = 'bar';
+                bar.style.height = altura + 'px';
+                bar.innerHTML = `
+                    <div class="bar-value">${Math.round(porcentaje)}%</div>
+                    <div class="bar-label">${obtenerDiaSemana(fecha).slice(0, 3)}</div>
+                `;
+                chart.appendChild(bar);
+            });
+        }
+        
+        function generarGraficoRendimiento(registrosPeriodo) {
+            // Agrupar por responsable
+            const porResponsable = {};
+            registrosPeriodo.forEach(r => {
+                if (!porResponsable[r.responsable]) {
+                    porResponsable[r.responsable] = { total: 0, completados: 0 };
+                }
+                porResponsable[r.responsable].total++;
+                if (r.status === 'COMPLETADO') {
+                    porResponsable[r.responsable].completados++;
+                }
+            });
+            
+            const chart = document.getElementById('rendimientoChart');
+            chart.innerHTML = '';
+            
+            const nombres = Object.keys(porResponsable);
+            const maxAltura = 300;
+            
+            if (nombres.length === 0) {
+                chart.innerHTML = '<p style="text-align: center; color: #999;">No hay datos para mostrar</p>';
+                return;
+            }
+            
+            nombres.forEach(nombre => {
+                const datos = porResponsable[nombre];
+                const porcentaje = datos.total > 0 ? (datos.completados / datos.total) * 100 : 0;
+                const altura = (porcentaje / 100) * maxAltura;
+                
+                const bar = document.createElement('div');
+                bar.className = 'bar';
+                bar.style.height = altura + 'px';
+                bar.innerHTML = `
+                    <div class="bar-value">${Math.round(porcentaje)}%</div>
+                    <div class="bar-label">${nombre.split(' ')[0]}</div>
+                `;
+                chart.appendChild(bar);
+            });
+        }
+        
+        function exportarReporte(formato) {
+            if (formato === 'pdf' || formato === 'excel') {
+                alert(`📊 Exportando reporte en formato ${formato.toUpperCase()}...\n\nEn una versión completa, esto generaría un archivo descargable.`);
+            }
+        }
+        
+        // ============================================
+        // HISTORIAL
+        // ============================================
+        
+        function cargarHistorial() {
+            const tbody = document.getElementById('historialBody');
+            tbody.innerHTML = '';
+            
+            // Ordenar por fecha descendente
+            const registrosOrdenados = [...registros].sort((a, b) => 
+                new Date(b.fecha) - new Date(a.fecha)
+            );
+            
+            // Cargar select de responsables
+            const selectResp = document.getElementById('buscarResponsable');
+            selectResp.innerHTML = '<option value="">Todos</option>';
+            responsables.forEach(r => {
+                selectResp.innerHTML += `<option value="${r.nombre}">${r.nombre}</option>`;
+            });
+            
+            registrosOrdenados.forEach(registro => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${formatearFecha(registro.fecha)}</td>
+                    <td>${registro.area}</td>
+                    <td>${registro.responsable}</td>
+                    <td>${registro.horaInicio || '-'}</td>
+                    <td>${registro.horaFin || '-'}</td>
+                    <td><span class="status-badge status-${registro.status.toLowerCase().replace(' ', '-')}">${registro.status}</span></td>
+                    <td>${registro.observaciones || '-'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+        
+        function filtrarHistorial() {
+            const buscarArea = document.getElementById('buscarArea').value.toLowerCase();
+            const buscarResponsable = document.getElementById('buscarResponsable').value;
+            const buscarFecha = document.getElementById('buscarFecha').value;
+            
+            let registrosFiltrados = [...registros];
+            
+            if (buscarArea) {
+                registrosFiltrados = registrosFiltrados.filter(r => 
+                    r.area.toLowerCase().includes(buscarArea)
+                );
+            }
+            
+            if (buscarResponsable) {
+                registrosFiltrados = registrosFiltrados.filter(r => 
+                    r.responsable === buscarResponsable
+                );
+            }
+            
+            if (buscarFecha) {
+                registrosFiltrados = registrosFiltrados.filter(r => 
+                    r.fecha === buscarFecha
+                );
+            }
+            
+            const tbody = document.getElementById('historialBody');
+            tbody.innerHTML = '';
+            
+            registrosFiltrados.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+            
+            registrosFiltrados.forEach(registro => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${formatearFecha(registro.fecha)}</td>
+                    <td>${registro.area}</td>
+                    <td>${registro.responsable}</td>
+                    <td>${registro.horaInicio || '-'}</td>
+                    <td>${registro.horaFin || '-'}</td>
+                    <td><span class="status-badge status-${registro.status.toLowerCase().replace(' ', '-')}">${registro.status}</span></td>
+                    <td>${registro.observaciones || '-'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+        
+        function limpiarFiltros() {
+            document.getElementById('buscarArea').value = '';
+            document.getElementById('buscarResponsable').value = '';
+            document.getElementById('buscarFecha').value = '';
+            cargarHistorial();
+        }
+        
+        // ============================================
+        // CONFIGURACIÓN
+        // ============================================
+        
+        function cargarConfiguracion() {
+            // Listar áreas
+            const listaAreas = document.getElementById('listaAreas');
+            listaAreas.innerHTML = '<h4 style="margin-top: 15px; margin-bottom: 10px;">Áreas Actuales:</h4>';
+            areas.forEach(area => {
+                listaAreas.innerHTML += `
+                    <div style="padding: 10px; background: #f8f9fa; border-radius: 6px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+                        <span>${area.nombre} <small style="color: #666;">(${area.tipo})</small></span>
+                        <button class="btn btn-danger" onclick="eliminarArea(${area.id})" style="padding: 4px 10px; font-size: 12px;">🗑️</button>
+                    </div>
+                `;
+            });
+            
+            // Listar responsables
+            const listaResponsables = document.getElementById('listaResponsables');
+            listaResponsables.innerHTML = '<h4 style="margin-top: 15px; margin-bottom: 10px;">Equipo Actual:</h4>';
+            responsables.forEach(resp => {
+                listaResponsables.innerHTML += `
+                    <div style="padding: 10px; background: #f8f9fa; border-radius: 6px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+                        <span>${resp.nombre}</span>
+                        <button class="btn btn-danger" onclick="eliminarResponsable(${resp.id})" style="padding: 4px 10px; font-size: 12px;">🗑️</button>
+                    </div>
+                `;
+            });
+        }
+        
+        function agregarAreaConfig() {
+            const nombre = document.getElementById('nuevaArea').value.trim();
+            const tipo = document.getElementById('tipoArea').value;
+            
+            if (!nombre) {
+                alert('Por favor ingresa un nombre');
+                return;
+            }
+            
+            const nuevaArea = {
+                id: Date.now(),
+                nombre: nombre,
+                tipo: tipo
+            };
+            
+            areas.push(nuevaArea);
+            guardarDatos();
+            
+            document.getElementById('nuevaArea').value = '';
+            cargarConfiguracion();
+            alert('✅ Área agregada correctamente');
+        }
+        
+        function eliminarArea(id) {
+            if (confirm('¿Estás seguro de eliminar esta área? Esto eliminará también todos sus registros.')) {
+                const area = areas.find(a => a.id === id);
+                if (area) {
+                    // Eliminar área
+                    areas = areas.filter(a => a.id !== id);
+                    // Eliminar registros asociados
+                    registros = registros.filter(r => r.area !== area.nombre);
+                    guardarDatos();
+                    cargarConfiguracion();
+                    alert('✅ Área eliminada correctamente');
+                }
+            }
+        }
+        
+        function agregarResponsableConfig() {
+            const nombre = document.getElementById('nuevoResponsable').value.trim();
+            
+            if (!nombre) {
+                alert('Por favor ingresa un nombre');
+                return;
+            }
+            
+            const nuevoResp = {
+                id: Date.now(),
+                nombre: nombre
+            };
+            
+            responsables.push(nuevoResp);
+            guardarDatos();
+            
+            document.getElementById('nuevoResponsable').value = '';
+            cargarConfiguracion();
+            alert('✅ Responsable agregado correctamente');
+        }
+        
+        function eliminarResponsable(id) {
+            if (confirm('¿Estás seguro de eliminar este responsable?')) {
+                responsables = responsables.filter(r => r.id !== id);
+                guardarDatos();
+                cargarConfiguracion();
+                alert('✅ Responsable eliminado correctamente');
+            }
+        }
+        
+        function exportarTodosDatos() {
+            const datos = {
+                registros: registros,
+                areas: areas,
+                responsables: responsables,
+                configuracion: configuracion,
+                fechaExportacion: new Date().toISOString()
+            };
+            
+            const dataStr = JSON.stringify(datos, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `limpieza_backup_${obtenerFechaHoy()}.json`;
+            link.click();
+            
+            URL.revokeObjectURL(url);
+            alert('✅ Datos exportados correctamente');
+        }
+        
+        function importarDatos() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            
+            input.onchange = (e) => {
+                const file = e.target.files[0];
+                const reader = new FileReader();
+                
+                reader.onload = (event) => {
+                    try {
+                        const datos = JSON.parse(event.target.result);
+                        
+                        if (confirm('¿Estás seguro? Esto reemplazará todos los datos actuales.')) {
+                            registros = datos.registros || [];
+                            areas = datos.areas || [];
+                            responsables = datos.responsables || [];
+                            configuracion = datos.configuracion || {};
+                            
+                            guardarDatos();
+                            alert('✅ Datos importados correctamente');
+                            location.reload();
+                        }
+                    } catch (error) {
+                        alert('❌ Error al importar datos. Verifica que el archivo sea válido.');
+                        console.error(error);
+                    }
+                };
+                
+                reader.readAsText(file);
+            };
+            
+            input.click();
+        }
+        
+        function confirmarBorrarDatos() {
+            const confirmacion = prompt('⚠️ ADVERTENCIA: Esta acción eliminará TODOS los datos.\n\nEscribe "BORRAR TODO" para confirmar:');
+            
+            if (confirmacion === 'BORRAR TODO') {
+                registros = [];
+                areas = [];
+                responsables = [];
+                guardarDatos();
+                alert('✅ Todos los datos han sido eliminados');
+                location.reload();
+            } else if (confirmacion !== null) {
+                alert('❌ Operación cancelada. No se escribió el texto correctamente.');
+            }
+        }
+        
+        // ============================================
+        // MODAL Y AGREGAR ÁREA AL CONTROL
+        // ============================================
+        
+        function mostrarAgregarArea() {
+            const modal = document.getElementById('modalAgregarArea');
+            modal.style.display = 'block';
+            
+            // Cargar select de responsables
+            const select = document.getElementById('modalResponsable');
+            select.innerHTML = '';
+            responsables.forEach(r => {
+                select.innerHTML += `<option value="${r.nombre}">${r.nombre}</option>`;
+            });
+        }
+        
+        function cerrarModal() {
+            document.getElementById('modalAgregarArea').style.display = 'none';
+            document.getElementById('modalNombreArea').value = '';
+        }
+        
+        function agregarAreaAlControl() {
+            const nombre = document.getElementById('modalNombreArea').value.trim();
+            const responsable = document.getElementById('modalResponsable').value;
+            
+            if (!nombre) {
+                alert('Por favor ingresa un nombre para el área');
+                return;
+            }
+            
+            // Determinar tipo (si tiene "Habitación" es habitación, sino es área)
+            const tipo = nombre.toLowerCase().includes('habitación') ? 'habitacion' : 'area';
+            
+            // Agregar a la configuración si no existe
+            const existeEnConfig = areas.find(a => a.nombre === nombre);
+            if (!existeEnConfig) {
+                areas.push({
+                    id: Date.now(),
+                    nombre: nombre,
+                    tipo: tipo
+                });
+            }
+            
+            // Crear registro del día
+            const hoy = obtenerFechaHoy();
+            const nuevoRegistro = {
+                id: Date.now(),
+                fecha: hoy,
+                area: nombre,
+                tipoArea: tipo,
+                responsable: responsable,
+                horaInicio: '',
+                horaFin: '',
+                status: 'PENDIENTE',
+                observaciones: ''
+            };
+            
+            registros.push(nuevoRegistro);
+            guardarDatos();
+            
+            cerrarModal();
+            cargarControlDiario();
+            actualizarDashboard();
+            alert('✅ Área agregada correctamente al control diario');
+        }
+        
+        // Cerrar modal al hacer clic fuera
+        window.onclick = function(event) {
+            const modal = document.getElementById('modalAgregarArea');
+            if (event.target === modal) {
+                cerrarModal();
+            }
+        }
+        
+        // ============================================
+        // EXPORTAR DÍA
+        // ============================================
+        
+        function exportarDia() {
+            const hoy = obtenerFechaHoy();
+            const registrosHoy = registros.filter(r => r.fecha === hoy);
+            
+            if (registrosHoy.length === 0) {
+                alert('No hay registros para exportar');
+                return;
+            }
+            
+            // Crear CSV
+            let csv = 'Área/Habitación,Responsable,Hora Inicio,Hora Fin,Status,Observaciones\n';
+            
+            registrosHoy.forEach(r => {
+                csv += `"${r.area}","${r.responsable}","${r.horaInicio}","${r.horaFin}","${r.status}","${r.observaciones}"\n`;
+            });
+            
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `limpieza_${hoy}.csv`;
+            link.click();
+            
+            URL.revokeObjectURL(url);
+            alert('✅ Registros del día exportados correctamente');
+        }
+        
+        // ============================================
+        // INICIALIZACIÓN
+        // ============================================
+        
+        function inicializar() {
+            // Actualizar fecha en el header
+            document.getElementById('currentDate').textContent = formatearFecha(obtenerFechaHoy());
+            
+            // Cargar datos
+            inicializarDatos();
+            
+            // Cargar dashboard inicial
+            actualizarDashboard();
+            
+            console.log('✅ Sistema iniciado correctamente');
+            console.log('📊 Registros cargados:', registros.length);
+            console.log('🏠 Áreas configuradas:', areas.length);
+            console.log('👥 Responsables:', responsables.length);
+        }
+        
+        // Iniciar aplicación
+        window.onload = inicializar;
+        
+        // Auto-guardar cada 30 segundos
+        setInterval(() => {
+            guardarDatos();
+            console.log('💾 Auto-guardado realizado');
+        }, 30000);
+        
+    </script>
+</body>
+</html>
